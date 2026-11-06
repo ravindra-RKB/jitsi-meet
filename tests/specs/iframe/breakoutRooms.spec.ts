@@ -165,4 +165,19 @@ describe('Breakout rooms iframe API commands and events', () => {
 
         expect(roomJids).not.toContain(roomToRemove?.jid);
     });
+    it('ignores autoAssignToBreakoutRooms from non-moderator', async () => {
+        if (!await checkIframeApi(p2)) {
+            return;
+        }
+
+        await p1.getIframeAPI().clearEventResults('breakoutRoomsUpdated');
+        await p2.getIframeAPI().clearEventResults('breakoutRoomsUpdated');
+
+        // Non-moderator attempts auto-assign.
+        await p2.getIframeAPI().executeCommand('autoAssignToBreakoutRooms');
+        await p2.driver.pause(1000);
+
+        expect(await p1.getIframeAPI().getEventResult('breakoutRoomsUpdated')).toBe(false);
+        expect(await p2.getIframeAPI().getEventResult('breakoutRoomsUpdated')).toBe(false);
+    });
 });
