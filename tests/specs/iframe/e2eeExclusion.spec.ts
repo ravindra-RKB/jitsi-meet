@@ -91,4 +91,41 @@ describe('E2EE and server-side transcription/translation exclude each other', ()
         await p1.driver.pause(2000);
         expect(await p1.execute(() => APP.store.getState()['features/subtitles']._requestingSubtitles)).toBe(false);
     });
+    it('toggles subtitles on and off via setSubtitles command without translation', async () => {
+        // Turn off E2EE first
+        await p1.switchToMainFrame();
+        await p1.getIframeAPI().executeCommand('toggleE2EE', false);
+
+        await p1.switchToIFrame();
+        await p1.driver.waitUntil(async () => !await isE2EEOn(), {
+            timeout: 5000,
+            timeoutMsg: 'E2EE did not turn off'
+        });
+
+        // Enable subtitles
+        await p1.switchToMainFrame();
+        await p1.getIframeAPI().executeCommand('setSubtitles', true, true);
+
+        await p1.switchToIFrame();
+        await p1.driver.waitUntil(
+            async () => await p1.execute(() => Boolean(APP.store.getState()['features/subtitles']._requestingSubtitles)),
+            {
+                timeout: 5000,
+                timeoutMsg: 'Subtitles were not enabled via setSubtitles'
+            }
+        );
+
+        // Disable subtitles
+        await p1.switchToMainFrame();
+        await p1.getIframeAPI().executeCommand('setSubtitles', false, false);
+
+        await p1.switchToIFrame();
+        await p1.driver.waitUntil(
+            async () => !await p1.execute(() => Boolean(APP.store.getState()['features/subtitles']._requestingSubtitles)),
+            {
+                timeout: 5000,
+                timeoutMsg: 'Subtitles were not disabled via setSubtitles'
+            }
+        );
+    });
 });
