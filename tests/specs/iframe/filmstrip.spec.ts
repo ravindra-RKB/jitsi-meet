@@ -75,4 +75,36 @@ describe('Filmstrip iframe API command and events', () => {
         await p1.switchToIFrame();
         await p1.getFilmstrip().assertVisible(false);
     });
+    it('enables and disables follow me via setFollowMe command', async () => {
+        await p1.switchToMainFrame();
+        await p1.getIframeAPI().executeCommand('setFollowMe', true);
+
+        await p1.switchToIFrame();
+        await p1.driver.waitUntil(async () => {
+            const followMe = await p1.execute(
+                () => APP.store.getState()['features/follow-me']?.followMeEnabled
+            );
+
+            return followMe === true;
+        }, {
+            timeout: 5000,
+            timeoutMsg: 'Follow me was not enabled'
+        });
+
+        // Toggle follow-me off.
+        await p1.switchToMainFrame();
+        await p1.getIframeAPI().executeCommand('setFollowMe', false);
+
+        await p1.switchToIFrame();
+        await p1.driver.waitUntil(async () => {
+            const followMe = await p1.execute(
+                () => APP.store.getState()['features/follow-me']?.followMeEnabled
+            );
+
+            return followMe === false;
+        }, {
+            timeout: 5000,
+            timeoutMsg: 'Follow me was not disabled'
+        });
+    });
 });
