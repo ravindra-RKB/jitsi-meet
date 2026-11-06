@@ -56,4 +56,48 @@ describe('Low bandwidth mode iframe API command and events', () => {
     it('disables low bandwidth mode via setLowBandwidthMode command', async () => {
         await setLowBandwidthModeAndExpect(false);
     });
+    it('sets assumed bandwidth bps via setAssumedBandwidthBps command', async () => {
+        await p1.switchToMainFrame();
+        await p1.getIframeAPI().executeCommand('setAssumedBandwidthBps', 500000);
+
+        await p1.switchToIFrame();
+        await p1.driver.waitUntil(async () => {
+            const bandwidth = await p1.execute(
+                () => APP.store.getState()['features/base/conference'].assumedBandwidthBps
+            );
+
+            return bandwidth === 500000;
+        }, {
+            timeout: 5000,
+            timeoutMsg: 'Assumed bandwidth bps was not updated to 500000'
+        });
+
+        // Update to a different bandwidth value.
+        await p1.switchToMainFrame();
+        await p1.getIframeAPI().executeCommand('setAssumedBandwidthBps', 1500000);
+
+        await p1.switchToIFrame();
+        await p1.driver.waitUntil(async () => {
+            const bandwidth = await p1.execute(
+                () => APP.store.getState()['features/base/conference'].assumedBandwidthBps
+            );
+
+            return bandwidth === 1500000;
+        }, {
+            timeout: 5000,
+            timeoutMsg: 'Assumed bandwidth bps was not updated to 1500000'
+        });
+
+        // Edge case: invalid string value should be rejected and not alter current bandwidth.
+        await p1.switchToMainFrame();
+        // @ts-ignore
+        await p1.getIframeAPI().executeCommand('setAssumedBandwidthBps', 'invalid-bps');
+
+        await p1.switchToIFrame();
+        const currentBps = await p1.execute(
+            () => APP.store.getState()['features/base/conference'].assumedBandwidthBps
+        );
+
+        expect(currentBps).toBe(1500000);
+    });
 });
